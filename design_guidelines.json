@@ -1,0 +1,142 @@
+{
+  "brand_identity": {
+    "name": "Grace Music Academy",
+    "archetype": "The Classical Modernist",
+    "vibe": "Elegant, Disciplined, Warm, Paper-like",
+    "emotional_tone": "Professional, Artistic, Trustworthy",
+    "design_principles": [
+      "Fusion: Classical Music Aesthetics x Modern SaaS Utility",
+      "Emotion: Calm confidence (Paper textures, warm whites)",
+      "Content: Data as Sheet Music (Structured, rhythmic, clear)",
+      "Zoom: Focus on the student and the schedule",
+      "Negative Space: High breathing room, like a well-composed score"
+    ]
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Playfair Display, serif",
+      "weights": ["400", "600", "700"],
+      "usage": "Page titles, Hero sections, Major stats",
+      "letter_spacing": "tracking-tight"
+    },
+    "body": {
+      "font_family": "Manrope, sans-serif",
+      "weights": ["400", "500", "600"],
+      "usage": "UI elements, Tables, Forms, Notes",
+      "letter_spacing": "tracking-normal"
+    },
+    "mono": {
+      "font_family": "JetBrains Mono, monospace",
+      "usage": "Fee amounts, Dates, IDs"
+    },
+    "installation": "Import via Google Fonts in index.css: @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=Playfair+Display:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');"
+  },
+  "colors": {
+    "palette": {
+      "background": "#F9F9F7",
+      "foreground": "#1A1A1A",
+      "card": "#FFFFFF",
+      "card_foreground": "#1A1A1A",
+      "primary": "#2C3E50",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#F0F0EB",
+      "secondary_foreground": "#2C3E50",
+      "muted": "#F0F0EB",
+      "muted_foreground": "#6B7280",
+      "accent": "#D4AF37",
+      "accent_foreground": "#FFFFFF",
+      "destructive": "#991B1B",
+      "destructive_foreground": "#FFFFFF",
+      "border": "#E5E5E0",
+      "input": "#E5E5E0",
+      "ring": "#2C3E50"
+    },
+    "usage_rules": [
+      "Background is Warm Alabaster (#F9F9F7), NOT pure white.",
+      "Primary Action Color is Midnight Blue (#2C3E50).",
+      "Accent Color (Gold #D4AF37) is used SPARINGLY for 'Paid' status or 'Premium' highlights.",
+      "Text is never pure black (#000000), use Deep Charcoal (#1A1A1A).",
+      "Borders are subtle and warm (#E5E5E0)."
+    ]
+  },
+  "visual_enhancers": {
+    "textures": [
+      "Noise: Add a subtle noise texture to the background to mimic high-quality paper.",
+      "Glassmorphism: Use 'Crystal Glass' (high blur, slight saturation) for sticky headers."
+    ],
+    "shadows": {
+      "card": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+      "hover": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+      "dropdown": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
+    },
+    "border_radius": {
+      "default": "0.5rem",
+      "card": "0.75rem",
+      "button": "9999px"
+    }
+  },
+  "layout_strategy": {
+    "dashboard_grid": "Bento Grid (Mode B: Control Room). Dense but elegant.",
+    "spacing": "Generous. Use p-6 or p-8 for cards. Gap-6 for grids.",
+    "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+    "alignment": "Left-aligned text for readability. Centered only for Hero/Login."
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 py-2 font-medium transition-all shadow-sm hover:shadow-md",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-full px-6 py-2 font-medium transition-all",
+      "ghost": "hover:bg-accent/10 hover:text-accent rounded-full px-4 py-2 transition-colors"
+    },
+    "cards": {
+      "style": "bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200",
+      "padding": "p-6"
+    },
+    "inputs": {
+      "style": "bg-white border-input focus:border-primary focus:ring-1 focus:ring-primary rounded-md h-10 px-3"
+    },
+    "status_badges": {
+      "paid": "bg-green-100 text-green-800 border border-green-200 rounded-full px-2.5 py-0.5 text-xs font-medium",
+      "unpaid": "bg-red-100 text-red-800 border border-red-200 rounded-full px-2.5 py-0.5 text-xs font-medium",
+      "pending": "bg-yellow-100 text-yellow-800 border border-yellow-200 rounded-full px-2.5 py-0.5 text-xs font-medium"
+    }
+  },
+  "image_urls": {
+    "login_hero": "https://images.pexels.com/photos/159420/piano-instrument-music-keys-159420.jpeg",
+    "dashboard_bg_texture": "https://images.pexels.com/photos/934067/pexels-photo-934067.jpeg",
+    "student_placeholder": "https://images.pexels.com/photos/7570775/pexels-photo-7570775.jpeg",
+    "empty_state": "https://images.pexels.com/photos/934067/pexels-photo-934067.jpeg"
+  },
+  "icons": {
+    "library": "lucide-react",
+    "style": "Stroke width 1.5px (Elegant/Thin)",
+    "usage": "Use for navigation, actions, and status indicators."
+  },
+  "motion": {
+    "transitions": "transition-all duration-200 ease-out",
+    "hover_effects": "transform hover:-translate-y-0.5",
+    "page_transition": "opacity-0 animate-in fade-in duration-500 slide-in-from-bottom-4"
+  },
+  "accessibility": {
+    "contrast": "Ensure text is #1A1A1A on #F9F9F7. Use APCA checks.",
+    "focus_states": "Visible ring-2 ring-primary ring-offset-2",
+    "testing": "All interactive elements MUST have data-testid attributes."
+  },
+  "instructions_to_main_agent": [
+    "1. SETUP: Update tailwind.config.js with the 'colors' palette defined above.",
+    "2. FONTS: Add the Google Fonts import to index.css immediately.",
+    "3. COMPONENTS: Use Shadcn/UI components but override the default styling with the 'components' rules above (especially rounded-full for buttons).",
+    "4. LAYOUT: Implement the Dashboard using the 'Bento Grid' strategy.",
+    "5. IMAGES: Use the provided image_urls for the Login page and Empty states.",
+    "6. TESTING: Add data-testid to every button, input, and link.",
+    "7. FILE EXTENSIONS: Use .js and .jsx as per the project structure.",
+    "8. NO TRANSPARENCY: Ensure headers have a solid or blurred background, never transparent over content."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Do not use gradients for backgrounds, use solid warm colors or subtle noise.",
+    "Avoid 'Inter' font for headings. Use Playfair Display.",
+    "Use generous padding (p-6, p-8).",
+    "Never use generic AI emojis.",
+    "Always use named exports for components.",
+    "Use Sonner for toasts."
+  ]
+}

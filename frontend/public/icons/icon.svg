@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#2C3E50"/>
+  <g transform="translate(56, 120)">
+    <!-- Piano keys background -->
+    <rect x="0" y="0" width="400" height="280" rx="10" fill="#FFFFFF"/>
+    <!-- White keys -->
+    <rect x="10" y="10" width="50" height="260" fill="#F5F5F0" stroke="#DDD"/>
+    <rect x="67" y="10" width="50" height="260" fill="#F5F5F0" stroke="#DDD"/>
+    <rect x="124" y="10" width="50" height="260" fill="#F5F5F0" stroke="#DDD"/>
+    <rect x="181" y="10" width="50" height="260" fill="#F5F5F0" stroke="#DDD"/>
+    <rect x="238" y="10" width="50" height="260" fill="#F5F5F0" stroke="#DDD"/>
+    <rect x="295" y="10" width="50" height="260" fill="#F5F5F0" stroke="#DDD"/>
+    <rect x="352" y="10" width="38" height="260" fill="#F5F5F0" stroke="#DDD"/>
+    <!-- Black keys -->
+    <rect x="45" y="10" width="35" height="160" rx="3" fill="#1A1A1A"/>
+    <rect x="102" y="10" width="35" height="160" rx="3" fill="#1A1A1A"/>
+    <rect x="216" y="10" width="35" height="160" rx="3" fill="#1A1A1A"/>
+    <rect x="273" y="10" width="35" height="160" rx="3" fill="#1A1A1A"/>
+    <rect x="330" y="10" width="35" height="160" rx="3" fill="#1A1A1A"/>
+  </g>
+  <!-- Music note -->
+  <circle cx="420" cy="100" r="45" fill="#E67E22"/>
+  <text x="420" y="115" font-size="50" fill="white" text-anchor="middle" font-family="Arial">♪</text>
+</svg>
