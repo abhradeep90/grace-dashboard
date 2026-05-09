@@ -59,7 +59,9 @@
     "node": "20.x"
   },
   "overrides": {
-    "ajv": "^8.0.0"
+    "ajv": "^8.0.0",
+    "schema-utils": "^4.0.0",
+    "ajv-keywords": "^5.0.0"
   },
   "scripts": {
     "postinstall": "node scripts/patch-ajv.js",
