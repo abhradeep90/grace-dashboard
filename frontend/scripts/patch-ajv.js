@@ -8,15 +8,9 @@ const filePath = path.join(
 );
 
 if (fs.existsSync(filePath)) {
-  let content = fs.readFileSync(filePath, 'utf8');
-  if (!content.includes('PATCHED')) {
-    content = content.replace(
-      'module.exports = function (ajv) {',
-      'module.exports = function (ajv) {\n  if (!ajv._formats) return; // PATCHED'
-    );
-    fs.writeFileSync(filePath, content);
-    console.log('Patched fork-ts-checker-webpack-plugin ajv-keywords');
-  }
+  // Replace entire file with a no-op - this is a JS project, TS format checking not needed
+  fs.writeFileSync(filePath, 'module.exports = function() {};\n');
+  console.log('Patched _formatLimit.js with no-op');
 } else {
   console.log('Patch target not found, skipping');
 }
