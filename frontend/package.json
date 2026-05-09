@@ -56,7 +56,10 @@
     "zod": "^3.24.4"
   },
   "engines": {
-    "node": "18.x"
+    "node": "20.x"
+  },
+  "overrides": {
+    "ajv": "^8.0.0"
   },
   "scripts": {
     "start": "craco start",
