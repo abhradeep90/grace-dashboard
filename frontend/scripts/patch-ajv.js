@@ -15,12 +15,14 @@ if (fs.existsSync(formatLimitPath)) {
 const indexPath = path.join(base, 'index.js');
 if (fs.existsSync(indexPath)) {
   let content = fs.readFileSync(indexPath, 'utf8');
-  if (!content.includes('PATCHED')) {
-    content = content.replace(
-      "if (!defFunc) throw new Error('Unknown keyword ' + keyword);",
-      "if (!defFunc) return ajv; // PATCHED"
-    );
-    fs.writeFileSync(indexPath, content);
-    console.log('Patched index.js');
-  }
+  content = content.replace(
+    /if \(!defFunc\).*throw new Error\('Unknown keyword ' \+ keyword\);/,
+    "if (!defFunc) return; // PATCHED"
+  );
+  content = content.replace(
+    /if \(!defFunc\).*return ajv; \/\/ PATCHED/,
+    "if (!defFunc) return; // PATCHED"
+  );
+  fs.writeFileSync(indexPath, content);
+  console.log('Patched index.js');
 }
