@@ -23,16 +23,16 @@ module.exports.default = ForkTsCheckerWebpackPlugin;
 }
 
 // 2. Replace ALL ajv-keywords installations with a no-op.
-//    - ajv-keywords@3 crashes with ajv@8 via _formatLimit.js
-//    - ajv-keywords@5 drops formatMinimum/formatMaximum keywords entirely,
-//      so any caller requesting those by name gets "Unknown keyword" thrown.
-//    The no-op accepts any call, registers format-limit keywords as pass-through
-//    validators so ajv@8 strict mode doesn't reject schemas that reference them.
+//    - ajv-keywords@3 crashes with ajv@8 via _formatLimit.js (uses internal _formats API)
+//    - ajv-keywords@5 dropped formatMinimum/formatMaximum, so callers requesting those
+//      by name get "Unknown keyword" thrown.
+//    The no-op accepts any call without throwing, and registers format-limit keywords
+//    as empty definitions so ajv@8 strict mode doesn't reject schemas that use them.
 const AJV_KEYWORDS_NOOP = `'use strict';
 // Patched: no-op for ajv v8 compatibility (all versions replaced)
 module.exports = function ajvKeywords(ajv) {
-  // Register format-limit keywords as no-ops so ajv@8 strict mode doesn't
-  // throw when a schema references formatMinimum / formatMaximum etc.
+  // Register format-limit keywords as empty definitions so ajv@8 strict mode
+  // does not throw when a schema references formatMinimum/formatMaximum etc.
   var fmtKws = ['formatMinimum', 'formatMaximum', 'formatExclusiveMinimum', 'formatExclusiveMaximum'];
   if (ajv && typeof ajv.addKeyword === 'function') {
     fmtKws.forEach(function(kw) {
@@ -46,13 +46,33 @@ module.exports = function ajvKeywords(ajv) {
 module.exports.get = function() { return []; };
 `;
 
+function resolveMainFile(dir) {
+  const pkgPath = path.join(dir, 'package.json');
+  if (!fs.existsSync(pkgPath)) return path.join(dir, 'index.js');
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    // Node 12+ resolves via "exports" map; check .require sub-condition first
+    const exp = pkg.exports;
+    if (exp) {
+      const dot = exp['.'];
+      if (dot) {
+        const cjsPath = dot.require || dot.default || (typeof dot === 'string' ? dot : null);
+        if (cjsPath) return path.join(dir, cjsPath.replace(/^\.\//, ''));
+      }
+      if (typeof exp === 'string') return path.join(dir, exp.replace(/^\.\//, ''));
+    }
+    if (pkg.main) return path.join(dir, pkg.main);
+  } catch (_) {}
+  return path.join(dir, 'index.js');
+}
+
 function patchAjvKeywords(dir) {
-  const indexPath = path.join(dir, 'index.js');
-  if (!fs.existsSync(indexPath)) return;
-  const content = fs.readFileSync(indexPath, 'utf8');
+  const filePath = resolveMainFile(dir);
+  if (!fs.existsSync(filePath)) return;
+  const content = fs.readFileSync(filePath, 'utf8');
   if (content.includes('Patched: no-op')) return; // already patched
-  fs.writeFileSync(indexPath, AJV_KEYWORDS_NOOP);
-  console.log('Patched ajv-keywords at:', dir);
+  fs.writeFileSync(filePath, AJV_KEYWORDS_NOOP);
+  console.log('Patched ajv-keywords at:', filePath);
 }
 
 // Search up to 4 levels deep for any nested ajv-keywords copies
