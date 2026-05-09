@@ -61,6 +61,11 @@ const webpackConfig = {
         ],
       };
 
+      // Remove ForkTsCheckerWebpackPlugin (incompatible with Node 20+, not needed for JS)
+      webpackConfig.plugins = webpackConfig.plugins.filter(
+        plugin => plugin.constructor.name !== 'ForkTsCheckerWebpackPlugin'
+      );
+
       // Add health check plugin to webpack if enabled
       if (config.enableHealthCheck && healthPluginInstance) {
         webpackConfig.plugins.push(healthPluginInstance);
