@@ -20,102 +20,111 @@ module.exports.default = ForkTsCheckerWebpackPlugin;
   console.log('Replaced fork-ts-checker-webpack-plugin with no-op');
 }
 
-// 2. Patch schema-utils/dist/validate.js to replace the ajv-keywords require
-//    with an inline no-op. This is the exact call site that crashes:
-//      const ajvKeywords = require("ajv-keywords");
-//      ajvKeywords(ajv, ["instanceof", "patternRequired"]);
-//    We do this instead of (or in addition to) patching the ajv-keywords package
-//    itself, because Node.js 20 package exports maps can route require() to a
-//    different file than the one we patch via package.json "main".
-const schemaUtilsValidate = path.join(nodeModules, 'schema-utils', 'dist', 'validate.js');
-if (fs.existsSync(schemaUtilsValidate)) {
-  let content = fs.readFileSync(schemaUtilsValidate, 'utf8');
-  if (!content.includes('__patched_noop__')) {
-    // Replace require("ajv-keywords") with a trivial function so the call on
-    // the next lines becomes a harmless no-op.
-    const patched = content
-      .replace(
-        /const\s+ajvKeywords\s*=\s*require\(["']ajv-keywords["']\)/,
-        'const ajvKeywords = /* __patched_noop__ */ function() {}'
-      )
-      // Handle both double-quote and single-quote variants
-      .replace(
-        /var\s+ajvKeywords\s*=\s*require\(["']ajv-keywords["']\)/,
-        'var ajvKeywords = /* __patched_noop__ */ function() {}'
-      );
-    if (patched !== content) {
-      fs.writeFileSync(schemaUtilsValidate, patched);
-      console.log('Patched schema-utils/dist/validate.js (replaced ajv-keywords require)');
-    } else {
-      console.log('schema-utils/dist/validate.js: pattern not matched, dumping context...');
-      const idx = content.indexOf('ajv-keywords');
-      if (idx !== -1) console.log('  context:', JSON.stringify(content.slice(Math.max(0, idx-30), idx+60)));
+// 2. Patch every schema-utils/dist/validate.js we can find (top-level AND nested
+//    inside packages like terser-webpack-plugin that bundle their own copy).
+//    Replace require("ajv-keywords") with an inline no-op that satisfies both
+//    direct-call and .default-call patterns.
+//
+//    The replacement is:
+//      (function(){var f=function(){};f.default=f;return f;})()
+//    This gives a callable function whose .default is also itself, so both
+//      ajvKeywords(ajv, [...])           and
+//      ajvKeywords.default(ajv, [...])
+//    succeed without throwing.
+
+function patchSchemaUtilsValidate(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  let content = fs.readFileSync(filePath, 'utf8');
+  if (content.includes('__sv_patched__')) return;
+  const patched = content.replace(
+    /require\(["']ajv-keywords["']\)/g,
+    '/* __sv_patched__ */(function(){var f=function(){};f.default=f;return f;})()'
+  );
+  if (patched !== content) {
+    fs.writeFileSync(filePath, patched);
+    console.log('Patched schema-utils validate.js at:', filePath);
+  } else {
+    // Pattern didn't match — dump a snippet to help debug
+    const idx = content.indexOf('ajv-keywords');
+    if (idx !== -1) {
+      console.log('schema-utils validate.js: ajv-keywords found but pattern unmatched at', filePath);
+      console.log('  context:', JSON.stringify(content.slice(Math.max(0, idx - 40), idx + 80)));
     }
   }
 }
 
-// 3. Patch every copy of ajv-keywords we can find, resolving the real entry
-//    file via the package.json exports/main fields.
+function searchSchemaUtils(dir, depth) {
+  if (depth === 0) return;
+  const nmDir = path.join(dir, 'node_modules');
+  if (!fs.existsSync(nmDir)) return;
+
+  const svPath = path.join(nmDir, 'schema-utils', 'dist', 'validate.js');
+  if (fs.existsSync(svPath)) patchSchemaUtilsValidate(svPath);
+
+  if (depth > 1) {
+    let entries;
+    try { entries = fs.readdirSync(nmDir); } catch (e) { return; }
+    for (const entry of entries) {
+      if (entry.startsWith('.') || entry === 'schema-utils') continue;
+      const sub = path.join(nmDir, entry);
+      try {
+        if (fs.statSync(sub).isDirectory()) searchSchemaUtils(sub, depth - 1);
+      } catch (e) {}
+    }
+  }
+}
+
+searchSchemaUtils(path.join(__dirname, '..'), 4);
+
+// 3. Patch every copy of ajv-keywords (belt-and-suspenders: patch all known
+//    entry-point filenames so the correct one is hit regardless of Node version
+//    package exports map resolution).
 const AJV_KEYWORDS_NOOP = `'use strict';
-// Patched: no-op for ajv v8 compatibility
-module.exports = function ajvKeywords(ajv) { return ajv; };
+// __ajvkw_patched__: no-op for ajv v8 compatibility
+var f = function() {};
+f.default = f;
+module.exports = f;
+module.exports.default = f;
 module.exports.get = function() { return []; };
 `;
 
-function resolveCjsEntry(dir) {
+function patchAjvKeywords(dir) {
+  const candidates = ['index.js', 'dist/index.js', 'dist/cjs/index.js', 'lib/index.js'];
+  // Also resolve via package.json main/exports
   const pkgPath = path.join(dir, 'package.json');
-  if (!fs.existsSync(pkgPath)) return null;
-  try {
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-    // Check exports map — Node.js prefers this over "main" in v12+
-    const exp = pkg.exports;
-    if (exp) {
-      // exports can be a string, or object keyed by "."
-      const dot = typeof exp === 'string' ? exp : (exp['.'] || null);
-      if (dot) {
-        // dot can be a string or { require, import, default, ... }
-        const cjsRelPath = typeof dot === 'string'
-          ? dot
-          : (dot.require || dot.node || dot.default || null);
-        if (cjsRelPath) {
-          return path.join(dir, cjsRelPath.replace(/^\.\//, ''));
+  if (fs.existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+      const exp = pkg.exports;
+      if (exp) {
+        const dot = typeof exp === 'string' ? exp : (exp['.'] || null);
+        if (dot) {
+          const r = typeof dot === 'string' ? dot
+            : (dot.require || dot.node || dot.default || null);
+          if (r) {
+            const rel = r.replace(/^\.\//, '');
+            if (!candidates.includes(rel)) candidates.push(rel);
+          }
         }
       }
-    }
-    if (pkg.main) return path.join(dir, pkg.main);
-  } catch (_) {}
-  return path.join(dir, 'index.js');
-}
-
-function patchAjvKeywords(dir) {
-  // Patch every .js file in the root and dist/ of the package that contains
-  // module.exports or exports assignments — cover all possible entry points.
-  const candidates = [
-    path.join(dir, 'index.js'),
-  ];
-  const cjsEntry = resolveCjsEntry(dir);
-  if (cjsEntry && !candidates.includes(cjsEntry)) candidates.push(cjsEntry);
-  // Also patch dist/index.js and dist/cjs/index.js as common locations
-  for (const rel of ['dist/index.js', 'dist/cjs/index.js', 'lib/index.js']) {
-    const p = path.join(dir, rel);
-    if (!candidates.includes(p)) candidates.push(p);
+      if (pkg.main) {
+        const m = pkg.main.replace(/^\.\//, '');
+        if (!candidates.includes(m)) candidates.push(m);
+      }
+    } catch (_) {}
   }
 
-  let patched = false;
-  for (const filePath of candidates) {
+  for (const rel of candidates) {
+    const filePath = path.join(dir, rel);
     if (!fs.existsSync(filePath)) continue;
     const content = fs.readFileSync(filePath, 'utf8');
-    if (content.includes('Patched: no-op')) continue;
+    if (content.includes('__ajvkw_patched__')) continue;
     fs.writeFileSync(filePath, AJV_KEYWORDS_NOOP);
     console.log('Patched ajv-keywords at:', filePath);
-    patched = true;
-  }
-  if (!patched) {
-    console.log('ajv-keywords: no patchable files found in', dir);
   }
 }
 
-function searchAndPatch(dir, depth) {
+function searchAjvKeywords(dir, depth) {
   if (depth === 0) return;
   const nmDir = path.join(dir, 'node_modules');
   if (!fs.existsSync(nmDir)) return;
@@ -130,10 +139,10 @@ function searchAndPatch(dir, depth) {
       if (entry.startsWith('.') || entry === 'ajv-keywords') continue;
       const sub = path.join(nmDir, entry);
       try {
-        if (fs.statSync(sub).isDirectory()) searchAndPatch(sub, depth - 1);
+        if (fs.statSync(sub).isDirectory()) searchAjvKeywords(sub, depth - 1);
       } catch (e) {}
     }
   }
 }
 
-searchAndPatch(path.join(__dirname, '..'), 4);
+searchAjvKeywords(path.join(__dirname, '..'), 4);
