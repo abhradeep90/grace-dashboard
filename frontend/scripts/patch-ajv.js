@@ -1,28 +1,29 @@
 const fs = require('fs');
 const path = require('path');
 
-const base = path.join(__dirname, '..', 'node_modules',
-  'fork-ts-checker-webpack-plugin', 'node_modules', 'ajv-keywords');
+// Replace fork-ts-checker-webpack-plugin with a no-op webpack plugin.
+// This is a JS project - TypeScript checking is not needed.
+const pluginDir = path.join(__dirname, '..', 'node_modules', 'fork-ts-checker-webpack-plugin');
+const pkgPath = path.join(pluginDir, 'package.json');
 
-// Patch 1: replace _formatLimit.js with no-op
-const formatLimitPath = path.join(base, 'keywords', '_formatLimit.js');
-if (fs.existsSync(formatLimitPath)) {
-  fs.writeFileSync(formatLimitPath, 'module.exports = function() {};\n');
-  console.log('Patched _formatLimit.js');
+if (fs.existsSync(pkgPath)) {
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  const mainFile = path.join(pluginDir, pkg.main || 'lib/index.js');
+  const mainDir = path.dirname(mainFile);
+
+  if (!fs.existsSync(mainDir)) fs.mkdirSync(mainDir, { recursive: true });
+
+  // Write a no-op plugin class
+  fs.writeFileSync(mainFile, `
+'use strict';
+class ForkTsCheckerWebpackPlugin {
+  apply() {}
 }
-
-// Patch 2: make index.js silently skip unknown keywords instead of throwing
-const indexPath = path.join(base, 'index.js');
-if (fs.existsSync(indexPath)) {
-  let content = fs.readFileSync(indexPath, 'utf8');
-  content = content.replace(
-    /if \(!defFunc\).*throw new Error\('Unknown keyword ' \+ keyword\);/,
-    "if (!defFunc) return; // PATCHED"
-  );
-  content = content.replace(
-    /if \(!defFunc\).*return ajv; \/\/ PATCHED/,
-    "if (!defFunc) return; // PATCHED"
-  );
-  fs.writeFileSync(indexPath, content);
-  console.log('Patched index.js');
+ForkTsCheckerWebpackPlugin.version = '${pkg.version}';
+module.exports = ForkTsCheckerWebpackPlugin;
+module.exports.default = ForkTsCheckerWebpackPlugin;
+`);
+  console.log('Replaced fork-ts-checker-webpack-plugin with no-op');
+} else {
+  console.log('fork-ts-checker-webpack-plugin not found, skipping');
 }
